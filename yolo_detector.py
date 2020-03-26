@@ -9,7 +9,7 @@ arg = argparse.ArgumentParser()
 arg.add_argument('-i', '--images', required=True, help='path to images')
 arg.add_argument('-d', '--darknet', required=True, help='path to config & weights directory')
 arg.add_argument('-c', '--confidence', type=float, default=0.5, help='min probability to filter')
-arg.add_argument('-t', '--nms-thresh', type=float, default=0.4, help='threshold for NMS')
+arg.add_argument('-t', '--nmsthresh', type=float, default=0.4, help='threshold for NMS')
 args = vars(arg.parse_args())
 
 labels_path = os.path.sep.join([args['darknet'], 'coco_names.txt'])
@@ -57,7 +57,7 @@ for out in out_array:
             confidences.append(float(confidence))
             class_labels.append(label)
 
-indexes = cv2.dnn.NMSBoxes(bounding_boxes, confidences, args['confidence'], args['nms-thresh'])
+indexes = cv2.dnn.NMSBoxes(bounding_boxes, confidences, args['confidence'], args['nmsthresh'])
 
 for b in range(len(bounding_boxes)):
     if b in indexes:
