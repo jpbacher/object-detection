@@ -2,13 +2,14 @@ import os
 import argparse
 from flask import Flask, request, Response
 import io
+#import base64
 import numpy as np
 import cv2
 from PIL import Image
 
 
 arg = argparse.ArgumentParser()
-arg.add_argument('-i', '--images', required=True, help='path to the input images')
+# arg.add_argument('-i', '--images', required=True, help='path to the input images')
 arg.add_argument('-d', '--darknet', required=True, help='base path to config & weights directory')
 arg.add_argument('-c', '--confidence', type=float, default=0.5, help='min probability to filter weak predictions')
 arg.add_argument('-t', '--nmsthresh', type=float, default=0.4, help='threshold for NMS')
@@ -95,19 +96,22 @@ network = load_model(cfg, weights)
 app = Flask(__name__)
 
 
-@app.route('/obj_detection/test', methods=['GET', 'POST'])
+@app.route('/detect', methods=['POST'])
 def main():
-    img = request.files[args['images']].read()
+    img = request.files['images'].read()
     img = Image.open(io.BytesIO(img))
     img_array = np.array(img)
     image = img_array.copy()
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     resp = make_prediction(image, network, args['confidence'], args['nmsthresh'], labels, colors)
     image = cv2.cvtColor(resp, cv2.COLOR_BGR2RGB)
-    np_img = Image.fromarray(image)
-    img_enc = img_to_byte(np_img)
-    return Response(response=img_enc, status=200, mimetype='image/jpeg')
+    result_img = Image.fromarray(image)
+    img_enc = img_to_byte(result_img)
+    try:
+        return Response(response=img_enc, status=200, mimetype='image/jpeg')
+    except FileNotFoundError:
+        abort(404)
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5000)
