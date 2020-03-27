@@ -1,36 +1,39 @@
 import os
 import argparse
-import requests
-from flask import Flask, request, Response, jsonify
-import json
-import io as StringIO
-from io import BytesIO
+from flask import Flask, request, Response
 import io
-import base64
 import numpy as np
 import cv2
 from PIL import Image
 
 
-def get_labels(labels_path):
-    path = os.path.sep.join(['/darknet', labels_path])
+arg = argparse.ArgumentParser()
+arg.add_argument('-i', '--images', required=True, help='path to the input images')
+arg.add_argument('-d', '--darknet', required=True, help='base path to config & weights directory')
+arg.add_argument('-c', '--confidence', type=float, default=0.5, help='min probability to filter weak predictions')
+arg.add_argument('-t', '--nmsthresh', type=float, default=0.4, help='threshold for NMS')
+args = vars(arg.parse_args())
+
+
+def get_labels(label_file):
+    path = os.path.sep.join([args['darknet'], label_file])
     label_class = open(path).read().strip().split('\n')
     return label_class
 
 
 def get_colors(labels):
     np.random.seed(24)
-    colors = np.random.uniform(0, 225, size=(len(labels), 3))
-    return colors
+    box_colors = np.random.uniform(0, 225, size=(len(labels), 3))
+    return box_colors
 
 
-def get_cfg_file(cfg_path):
-    path = os.path.sep.join(['/darknet', cfg_path])
+def get_cfg_file(cfg_file):
+    path = os.path.sep.join([args['darknet'], cfg_file])
     return path
 
 
-def get_weights(weights_path):
-    path = os.path.sep.join(['/darknet', weights_path])
+def get_weights(weights_file):
+    path = os.path.sep.join([args['darknet'], weights_file])
     return path
 
 
@@ -82,12 +85,29 @@ def make_prediction(img, model, conf_thresh, nms_thresh, labels, colors):
     return img
 
 
-labels = get_labels('/coco_names.txt')
+labels = get_labels('coco_names.txt')
 colors = get_colors(labels)
-cfg = get_cfg_file('/yolov3.cfg')
-weights = get_weights('/yolov3.weights')
+cfg = get_cfg_file('yolov3.cfg')
+weights = get_weights('yolov3.weights')
 network = load_model(cfg, weights)
 
 
 app = Flask(__name__)
 
+
+@app.route('/obj_detection/test', methods=['GET', 'POST'])
+def main():
+    img = request.files[args['images']].read()
+    img = Image.open(io.BytesIO(img))
+    img_array = np.array(img)
+    image = img_array.copy()
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    resp = make_prediction(image, network, args['confidence'], args['nmsthresh'], labels, colors)
+    image = cv2.cvtColor(resp, cv2.COLOR_BGR2RGB)
+    np_img = Image.fromarray(image)
+    img_enc = img_to_byte(np_img)
+    return Response(response=img_enc, status=200, mimetype='image/jpeg')
+
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
