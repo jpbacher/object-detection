@@ -2,7 +2,6 @@ import os
 import argparse
 from flask import Flask, request, Response
 import io
-#import base64
 import numpy as np
 import cv2
 from PIL import Image
