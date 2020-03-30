@@ -1,2 +1,2 @@
 # object-detection
-Object detector based on YOLO v3 algorithm (Python & OpenCV)
+Object detector using pre-trained YOLO v3 & Faster-RCNN algorithms (Python, OpenCV, & PyTorch)
