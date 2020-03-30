@@ -8,7 +8,6 @@ from PIL import Image
 
 
 arg = argparse.ArgumentParser()
-# arg.add_argument('-i', '--images', required=True, help='path to the input images')
 arg.add_argument('-d', '--darknet', required=True, help='base path to config & weights directory')
 arg.add_argument('-c', '--confidence', type=float, default=0.5, help='min probability to filter weak predictions')
 arg.add_argument('-t', '--nmsthresh', type=float, default=0.4, help='threshold for NMS')
